@@ -51,7 +51,7 @@ fun UHDLogPage(modifier: Modifier = Modifier) {
     fun runUhdCommand(args: List<String>) {
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                val startupScript = extractScriptFromAssets(context, "start_and_run_UHD.sh")
+                val startupScript = extractScriptFromAssets(context, "start_linux.sh")
                 val runnerScript = extractScriptFromAssets(context, "run_uhd.sh")
 
                 val command = listOf("su", "-c", "$startupScript ${args.joinToString(" ")}")
