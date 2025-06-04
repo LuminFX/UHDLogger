@@ -1,4 +1,4 @@
-INSTALL_PATH=$1
+INSTALL_PATH=$7
 
 if [ -z "$INSTALL_PATH" ]; then
     echo -e "\033[0;31mNo install path provided. Usage: $0 <install_path>\033[0m"
@@ -32,7 +32,7 @@ fi
 
 echo -e "\033[0;32m[*] Attempting to install Ubuntu at ${INSTALL_PATH}...\033[0m"
 
-INSTALL_DIR="${INSTALL_PATH%/}/chrootubuntu"
+INSTALL_DIR="${INSTALL_PATH%/}"
 mkdir -p "$INSTALL_DIR" || {
     echo -e "\033[0;31mFailed to create install directory: $INSTALL_DIR\033[0m"
     exit 1
@@ -92,10 +92,13 @@ usermod -G 3003 -a root
 
 echo -e '\033[0;32m[*] Installing & updating necessary packages...\033[0m'
 
+export DEBIAN_FRONTEND=noninteractive
+export TZ=America/Denver
+
 apt update
 apt upgrade -y
 
-apt install -y git build-essential cmake libusb-1.0-0-dev libboost-all-dev pkg-config python3 python3-pip python3-requests libuhd-dev
+apt install -y git build-essential cmake libusb-1.0-0-dev libboost-all-dev pkg-config python3 python3-pip python3-requests libuhd-dev sudo bc
 
 echo -e '\033[0;32m[*] Cloning UHD repository...\033[0m'
 
@@ -107,8 +110,10 @@ cd build
 
 echo -e '\033[0;32m[*] Compiling UHD...\033[0m'
 
+rm -rf CMakeCache.txt CMakeFiles  # Clean previous config if re-running
+
 cmake ..
-make
+make -j$(nproc)
 make install
 ldconfig
 

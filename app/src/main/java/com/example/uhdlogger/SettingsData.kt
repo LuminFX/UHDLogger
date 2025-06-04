@@ -1,5 +1,6 @@
 package com.example.uhdlogger
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -9,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+@SuppressLint("SdCardPath")
 val settingsList = listOf(
     Setting("gain", "Gain", "5"),
     Setting("duration", "Duration", "60"),
@@ -18,7 +20,7 @@ val settingsList = listOf(
     Setting("rate", "Rate", "10e6"),
     Setting("chroot_linux_path", "Linux Path", "/data/local/tmp/chrootubuntu"),
     Setting("uhd_path", "UHD Path", "/root/uhd"),
-    Setting("log_path", "Log File Path", "/root/uhd_test_data")
+    Setting("log_path", "Log File Path", "/sdcard/uhd_test_data")
 )
 
 class SettingsDataStore(private val context: Context) {
