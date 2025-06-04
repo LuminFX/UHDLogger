@@ -1,0 +1,141 @@
+Confirmed working on:
+Pixel 6 on Android 15
+Pixel 9 on Android 15
+
+Before starting, ensure you are working from a computer with Android SDK tools installed
+
+Section 1: Rooting the Device
+
+Connect the Android device via USB to the computer
+
+	On the Android Device:
+Enter developer mode
+Settings -> About Phone, and tap Build Number 7x in a row
+Enable OEM Unlocking and USB Debugging
+Settings -> System -> Developer Options
+
+From the Computer:
+In the terminal, run ‘adb reboot bootloader’
+Check for success with ‘fastboot devices’
+Run ‘fastboot flashing unlock’
+Download Android OS from this website
+Ensure the version matches what is currently installed on the phone
+Unzip the downloaded file and locate ‘boot.img’ (for pixel 9 use init_boot.img)
+Push boot.img to the Android device with ‘adb push boot.img /sdcard/Download/’
+
+	On the Android Device
+Install Magisk apk from this website
+Download the .apk, click to open once complete
+Open Magisk, and click ‘Install’
+Select the boot.img pushed from the computer as the file to be patched
+
+	From the Computer
+Pull the patched boot image back to the computer with ‘adb pull /sdcard/Download/magisk_patched-XXXXX.img’
+You will have to fill in XXXXX according to the file name
+In the terminal, run ‘adb reboot bootloader’
+Then run ‘fastboot flash boot magisk_patched-XXXXX.img’
+Followed by ‘fastboot reboot’
+
+	On the Android Device
+Re-enable developer mode and OEM unlocking by following steps 1 & 2.
+Enable the setting ‘Disable child process restrictions’ in the bottom of the developer settings menu (Settings -> System -> Developer Options)
+
+
+
+
+Section 2: Installing Linux
+
+	From the Android Device
+Navigate to the Built-In Busybox repo, and download the most recent zip archive
+Open Magisk, navigate to Modules, and select ‘install from storage’
+Select the downloaded zip archive and confirm the installation
+Reboot the device
+Install the Termux apk from this Github
+Select the apk marked for arm64
+To install, download the apk and open it
+Open the Termux app and run the following
+pkg update
+Su
+
+	From the Computer
+Type ‘adb shell’ and ‘su’ into the terminal
+Use the following commands to create and navigate to a directory for a Linux install
+mkdir /data/local/tmp/chrootubuntu
+cd /data/local/tmp/chrootubuntu
+Download the latest Ubuntu rootfs and unzip it
+busybox wget https://cdimage.ubuntu.com/ubuntu-base/releases/noble/release/ubuntu-base-24.04.2-base-arm64.tar.gz
+tar xpvf ubuntu-base-*-base-arm64.tar.gz --numeric-owner
+mkdir sdcard
+mkdir dev/shm
+Create a startup script
+cd ../
+vi startup.sh
+Populate startup.sh with the following:
+
+UBUNTUPATH="/data/local/tmp/chrootubuntu"
+
+busybox mount -o remount,dev,suid /data
+
+busybox mount --bind /dev $UBUNTUPATH/dev
+busybox mount --bind /sys $UBUNTUPATH/sys
+busybox mount --bind /proc $UBUNTUPATH/proc
+busybox mount -t devpts devpts $UBUNTUPATH/dev/pts
+
+busybox mount -t tmpfs -o size=256M tmpfs $UBUNTUPATH/dev/shm
+
+busybox mount --bind /sdcard $UBUNTUPATH/sdcard
+
+busybox chroot $UBUNTUPATH /bin/su - root
+
+busybox umount $UBUNTUPATH/dev/shm
+busybox umount $UBUNTUPATH/dev/pts
+busybox umount $UBUNTUPATH/dev
+busybox umount $UBUNTUPATH/proc
+busybox umount $UBUNTUPATH/sys
+busybox umount $UBUNTUPATH/sdcard
+
+Make the script executable with ‘chmod +x startup.sh’
+Run the script with ‘sh startup.sh’
+In the terminal, run the following:
+
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "127.0.0.1 localhost" > /etc/hosts
+groupadd -g 3003 aid_inet
+groupadd -g 3004 aid_net_raw
+groupadd -g 1003 aid_graphics
+usermod -g 3003 -G 3003,3004 -a _apt
+usermod -G 3003 -a root
+apt update
+apt upgrade -y
+
+Section 3: Install UHD
+
+On the adb shell open from section 2
+Install dependencies with
+apt update && apt install -y git build-essential cmake libusb-1.0-0-dev libboost-all-dev pkg-config python3 python3-pip python3-requests libuhd-dev bc
+Clone and build UHD:
+
+cd ~
+git clone https://github.com/EttusResearch/uhd.git
+cd uhd/host
+mkdir build
+cd build
+cmake ..
+make
+make install
+ldconfig
+uhd_images_downloader
+
+(Optional) Section 4: setup WiFi adb
+
+	On the computer usb connected to android
+Find the IP of the android with
+adb tcpip 5555
+adb shell ip route
+With the IP, disconnect the USB and enter
+adb connect <phone_ip>
+adb shell
+When finished
+adb disconnect <phone_ip>:5555
+
+
